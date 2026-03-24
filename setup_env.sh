@@ -48,11 +48,7 @@ echo ">>> flash-attn 설치 (Attention_GRN 튜토리얼에만 필요)..."
 pip install "flash-attn==1.0.1" || echo "[WARNING] flash-attn 설치 실패 - Attention_GRN 튜토리얼은 이 패키지가 필요합니다."
 
 # 7. scGPT 소스 설치
-echo ">>> scGPT 설치..."
-if [ ! -d "scGPT" ]; then
-    git clone https://github.com/bowang-lab/scGPT.git
-fi
-pip install -e ./scGPT
+pip install scGPT==0.2.4
 
 echo ""
 echo "=== 환경 설정 완료 ==="
