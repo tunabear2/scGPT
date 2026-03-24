@@ -9,16 +9,17 @@ echo "=== scGPT 환경 설정 시작 ==="
 # 1. Python 버전 확인
 python_version=$(python3 --version 2>&1 | awk '{print $2}')
 echo "Python version: $python_version"
-
+python 3.9 기준.
 # 2. pip 업그레이드
 pip install --upgrade pip
 
 # 3. PyTorch 설치 (CUDA 11.6 기준, poetry.lock: torch==1.13.0)
-echo ">>> PyTorch 설치 (torch==1.13.0)..."
-pip install torch==1.13.0+cu116 torchvision==0.14.0+cu116 \
-    --extra-index-url https://download.pytorch.org/whl/cu116
+conda install pytorch==1.13.0 torchvision==0.14.0 torchaudio==0.13.0 pytorch-cuda=11.7 -c pytorch -c nvidia
+pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu117
 # CPU only인 경우:
-# pip install torch==1.13.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+pip install torch==1.13.0+cpu torchvision==0.14.0+cpu torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cpu
+# 3. PyTorch 설치 (CUDA 11.6 기준, poetry.lock: torch==1.13.0)
+echo ">>> PyTorch 설치 (torch==1.13.0)..."
 
 # 4. 핵심 패키지 설치
 echo ">>> 핵심 패키지 설치..."
