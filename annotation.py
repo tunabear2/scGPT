@@ -133,7 +133,7 @@ hyperparameter_defaults = dict(
     do_train=True,
     load_model="./data/pretrain",
     mask_ratio=0.0,
-    epochs=10,
+    epochs=20,
     n_bins=51,
     MVC=False,
     ecs_thres=0.0,
@@ -728,6 +728,7 @@ def evaluate(model: nn.Module, loader: DataLoader, return_raw: bool = False) -> 
     total_loss = total_error = total_dab = 0.0
     total_num = 0
     predictions = []
+    labels_all = []
 
     with torch.no_grad():
         for batch_data in loader:
@@ -750,16 +751,28 @@ def evaluate(model: nn.Module, loader: DataLoader, return_raw: bool = False) -> 
                 loss = criterion_cls(output_values, celltype_labels)
                 if DAB:
                     loss_dab = criterion_dab(output_dict["dab_output"], batch_labels)
-
+            pred = output_values.argmax(1)
             n = len(input_gene_ids)
             total_loss += loss.item() * n
             accuracy = (output_values.argmax(1) == celltype_labels).sum().item()
             total_error += (1 - accuracy / n) * n
             total_dab += loss_dab.item() * n if DAB else 0.0
             total_num += n
-            predictions.append(output_values.argmax(1).cpu().numpy())
+            predictions.append(pred.cpu().numpy())
+            labels_all.append(celltype_labels.cpu().numpy())
+    predictions = np.concatenate(predictions, axis=0)
+    labels_all = np.concatenate(labels_all, axis=0)
+
+    val_precision = precision_score(labels_all, predictions, average="macro", zero_division=0)
+    val_recall = recall_score(labels_all, predictions, average="macro", zero_division=0)
+    val_f1 = f1_score(labels_all, predictions, average="macro", zero_division=0)
+    val_acc = accuracy_score(labels_all, predictions)
 
     wandb.log({
+        "valid/accuracy": val_acc,
+        "valid/precision": val_precision,
+        "valid/recall": val_recall,
+        "valid/f1": val_f1,
         "valid/mse": total_loss / total_num,
         "valid/err": total_error / total_num,
         "valid/dab": total_dab / total_num,
@@ -768,8 +781,8 @@ def evaluate(model: nn.Module, loader: DataLoader, return_raw: bool = False) -> 
     })
 
     if return_raw:
-        return np.concatenate(predictions, axis=0)
-    return total_loss / total_num, total_error / total_num
+        return predictions
+    return total_loss / total_num, total_error / total_num, val_acc, val_precision, val_recall, val_f1
 
 
 # ========================================================================
@@ -796,10 +809,10 @@ for epoch in range(1, epochs + 1):
     if config.do_train:
         train(model, loader=train_loader)
 
-    val_loss, val_err = evaluate(model, loader=valid_loader)
+    val_loss, val_err, val_acc, val_precision, val_recall, val_f1 = evaluate(model, loader=valid_loader)
     elapsed = time.time() - epoch_start_time
     logger.info("-" * 89)
-    logger.info(f"| end of epoch {epoch:3d} | time: {elapsed:5.2f}s | valid loss {val_loss:5.4f} | err {val_err:5.4f}")
+    logger.info(f"| end of epoch {epoch:3d} | time: {elapsed:5.2f}s | valid loss {val_loss:5.4f} | err {val_err:5.4f} | acc {val_acc:5.4f} | precision {val_precision:5.4f} | recall {val_recall:5.4f} | f1 {val_f1:5.4f}")
     logger.info("-" * 89)
 
     if val_loss < best_val_loss:
@@ -913,4 +926,3 @@ wandb.log(results)
 torch.save(best_model.state_dict(), save_dir / "model.pt")
 logger.info(f"Best model (epoch {best_model_epoch}) saved to {save_dir / 'model.pt'}")
 wandb.finish()
-
