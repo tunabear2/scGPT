@@ -80,7 +80,7 @@ pip install \
     leidenalg==0.9.1 \
     "umap-learn>=0.5.3" \
     matplotlib==3.7.5 \
-    seaborn==0.12.2 \
+    "seaborn>=0.13.0" \
     "scikit-learn>=1.0.2" \
     numba \
     scikit-misc
