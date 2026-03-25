@@ -86,10 +86,13 @@ class _WandbShim:
         def log_artifact(self, a): pass
         def finish(self): pass
 
+    config = None
+
     @staticmethod
     def init(config=None, project=None, reinit=False, settings=None):
         run = _WandbShim._Run()
         run.config = types.SimpleNamespace(**config) if isinstance(config, dict) else config
+        _WandbShim.config = run.config
         return run
 
     @staticmethod
@@ -910,3 +913,4 @@ wandb.log(results)
 torch.save(best_model.state_dict(), save_dir / "model.pt")
 logger.info(f"Best model (epoch {best_model_epoch}) saved to {save_dir / 'model.pt'}")
 wandb.finish()
+
